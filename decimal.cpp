@@ -1,4 +1,4 @@
-//Ïû³ıGCC/ClangµÄ·Ö½Ú´¦Àí¾¯¸æ
+//æ¶ˆé™¤GCC/Clangçš„åˆ†èŠ‚å¤„ç†è­¦å‘Š
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
@@ -31,7 +31,7 @@
 * 2025/12/25 00:15 Added template for constructed function for float type.
 * 2025/12/25 00:41 Partly fixed compile errors for multiple instances matching argument list.
 * 2025/12/25 17:40 Added operator<< and operator>>, but not considered performance.
-* 2025/12/26 01:16 Added definition of warning macro and considered multiple compilers, 
+* 2025/12/26 01:16 Added definition of warning macro and considered multiple compilers,
                    but not fully confirmed whether warnings would appear.
 * 2025/12/27 00:58 Partly supported for literal constants, however scientific and binary
                    are temporarily excluded, which could be seen on the error list.
@@ -42,91 +42,102 @@
 * 2026/01/01 02:02 Renamed longToData to longlongToData because the correct type is long long.
 */
 
-#pragma region ¾¯¸æºê
+#pragma region è­¦å‘Šå®
 
 #define STRINGIZE(x) STRINGIZE_(x)
-#define STRINGIZE_(x) #x  // ×Ö·û´®»¯²Ù×÷·û
+#define STRINGIZE_(x) #x  // å­—ç¬¦ä¸²åŒ–æ“ä½œç¬¦
 
 #if defined(_MSC_VER)
-    // MSVC: Ê¹ÓÃ message pragma£¬¸ñÊ½»¯Îª¾¯¸æ
+// MSVC: ä½¿ç”¨ message pragmaï¼Œæ ¼å¼åŒ–ä¸ºè­¦å‘Š
 #define warning(msg) __pragma(message(__FILE__ "(" STRINGIZE(__LINE__) "): warning: " msg))
 
 #elif defined(__GNUC__) || defined(__clang__)
-    // GCC/Clang: Ê¹ÓÃ GCC warning pragma
-    // ĞèÒªÏÈ½«msg×ª»»Îª×Ö·û´®×ÖÃæÁ¿
+// GCC/Clang: ä½¿ç”¨ GCC warning pragma
+// éœ€è¦å…ˆå°†msgè½¬æ¢ä¸ºå­—ç¬¦ä¸²å­—é¢é‡
 #define warning(msg) _Pragma(GCC warning #msg)
 
 #elif defined(__INTEL_COMPILER)
-    // Intel: ÀàËÆMSVC
+// Intel: ç±»ä¼¼MSVC
 #define warning(msg) __pragma(message(__FILE__ "(" STRINGIZE(__LINE__) "): warning: " msg))
 
 #else
-    // Î´Öª±àÒëÆ÷£ºÊ¹ÓÃ¾²Ì¬¶ÏÑÔ²úÉú¾¯¸æĞ§¹û
+// æœªçŸ¥ç¼–è¯‘å™¨ï¼šä½¿ç”¨é™æ€æ–­è¨€äº§ç”Ÿè­¦å‘Šæ•ˆæœ
 #define warning(msg) static_assert(true, "warning: " msg)
 #endif
 #pragma endregion
 
-//Ö÷ÒªÊµÏÖ²¿·Ö
+//ä¸»è¦å®ç°éƒ¨åˆ†
 class acc {
 private:
-    typedef long long maxtype; // ×î´óÊı¾İÀàĞÍ¡£ÈôÎªÎŞ·ûºÅÊı£¬Ôò¿ÉÄÜÏÂÒç
-    typedef int8_t digittype; // ÊıÎ»ÀàĞÍ¡£µ¥¸öÊı¾İ³Ë»ı¼«¶ËÖµÎª-81~+81£¬int8_tµÄÖµ¸ÕºÃ¿ÉÒÔ¸²¸Ç
+    typedef long long maxtype; // æœ€å¤§æ•°æ®ç±»å‹ã€‚è‹¥ä¸ºæ— ç¬¦å·æ•°ï¼Œåˆ™å¯èƒ½ä¸‹æº¢
+    typedef int8_t digittype; // æ•°ä½ç±»å‹ã€‚å•ä¸ªæ•°æ®ä¹˜ç§¯æç«¯å€¼ä¸º-81~+81ï¼Œint8_tçš„å€¼åˆšå¥½å¯ä»¥è¦†ç›–
 
     struct unit {
         bool isPositive = true;
-        maxtype accuracy = 0;  // Ğ¡ÊıÎ»Êı£¬Ä¬ÈÏ0
-        std::deque<int8_t> data;  // ´Ó¸ßÎ»µ½µÍÎ»´æ´¢ËùÓĞÊı×Ö£¨°üÀ¨ÕûÊıºÍĞ¡Êı²¿·Ö£©
+        maxtype accuracy = 0;  // å°æ•°ä½æ•°ï¼Œé»˜è®¤0
+        std::deque<int8_t> data;  // ä»é«˜ä½åˆ°ä½ä½å­˜å‚¨æ‰€æœ‰æ•°å­—ï¼ˆåŒ…æ‹¬æ•´æ•°å’Œå°æ•°éƒ¨åˆ†ï¼‰
     } entry;
 
-    //¹¹Ôìº¯ÊıÄ£°å¶¨Òå
-    //¸¡µãÊı¹¹Ôìº¯Êı
-    template <typename T> 
-    void constructFromFraction(T val ,maxtype fixedPrecision/* = 15*/
-    /*ÄÚ²¿Ê¹ÓÃ£¬Ç¿ÖÆÒªÇóÌá¹©²ÎÊı*/) {
+    //æ„é€ å‡½æ•°æ¨¡æ¿å®šä¹‰
+    //è¾¹ç•Œå‰©ä½™å€¼çš„é»˜è®¤æ“ä½œï¼ˆå››èˆäº”å…¥ï¼‰
+    template<typename T>
+    static maxtype roundUpOrDown(T val) {
+        return static_cast<maxtype>(val + 0.5);
+    }
+
+    //æ„é€ å‡½æ•°æ¨¡æ¿å®šä¹‰
+
+    //æµ®ç‚¹æ•°æ„é€ å‡½æ•°æ¨¡æ¿
+    template <typename T>
+    void constructFromFraction(
+        T val,
+        maxtype fixedPrecision = 15,
+        maxtype(*fp)(T) = &acc::roundUpOrDown<T>//æ— é™å°æ•°æˆ–æ˜ç¡®é™ä½æ•°æ®ç²¾åº¦æ—¶çš„å¤„ç†æ–¹æ³•
+    ) {
         entry.isPositive = val >= 0;
         val = val >= 0 ? val : -val;
 
-        // Ê¹ÓÃÖ¸¶¨¾«¶È
+        // ä½¿ç”¨æŒ‡å®šç²¾åº¦
         long long multiplier = 1;
         for (maxtype i = 0; i < fixedPrecision; i++) {
             multiplier *= 10;
         }
 
-        // ËÄÉáÎåÈë
-        long long scaled = static_cast<long long>(static_cast<long long>(val) * multiplier + 0.5);
+        // é»˜è®¤æƒ…å†µä¸‹å››èˆäº”å…¥
+        long long scaled = static_cast<long long>(fp(val*multiplier));
 
-        // ´æ´¢
+        // å­˜å‚¨
         longlongToData(scaled);
         entry.accuracy = fixedPrecision;
     }
 
-    //ÕûÊı¹¹Ôìº¯Êı
+    //æ•´æ•°æ„é€ å‡½æ•°
     template <typename T>
     void constructFromInteger(T val) {
-        //Ã»ÓĞĞ´maxtype fixedPrecision£¬ÒòÎªÕûÊı²»ĞèÒª×¢Ã÷¾«È·¶È
+        //æ²¡æœ‰å†™maxtype fixedPrecisionï¼Œå› ä¸ºæ•´æ•°ä¸éœ€è¦æ³¨æ˜ç²¾ç¡®åº¦
         (void)entry.accuracy;
         entry.isPositive = val >= 0;
 
         val = val >= 0 ? val : static_cast<T>(-static_cast<std::make_signed_t<T>>(val));
         entry.accuracy = 0;
-        maxtype convertedValue = val;//ÌáÉıÊı¾İ·¶Î§
+        maxtype convertedValue = val;//æå‡æ•°æ®èŒƒå›´
         longlongToData(val);
     }
 
 public:
-    // Ä¬ÈÏ¹¹Ôìº¯Êı£¬Èô³åÍ»¿¼ÂÇÈ¥³ı
+    // é»˜è®¤æ„é€ å‡½æ•°ï¼Œè‹¥å†²çªè€ƒè™‘å»é™¤
     acc() {
         entry.isPositive = true;
         entry.accuracy = 0;
         entry.data = { 0 };
     }
 
-    // long longÀàĞÍ¹¹Ôìº¯Êı
+    // long longç±»å‹æ„é€ å‡½æ•°
     acc(long long val) {
         constructFromInteger(val);
     }
 
-    // ÕûÊıÀàĞÍ¹¹Ôìº¯Êı
+    // æ•´æ•°ç±»å‹æ„é€ å‡½æ•°
     acc(int val) {
         constructFromInteger(val);
     }
@@ -151,40 +162,42 @@ public:
         constructFromInteger(val);
     }
 
-    
-    
 
-    // ×Ö·û´®¹¹Ôìº¯Êı£¨Ö§³Ö´óÕûÊı£©
+
+
+    // å­—ç¬¦ä¸²æ„é€ å‡½æ•°ï¼ˆæ”¯æŒå¤§æ•´æ•°ï¼‰
     acc(const std::string& str) {
         parseString(str);
     }
 
-    // C·ç¸ñ×Ö·û´®¹¹Ôìº¯Êı
+    // Cé£æ ¼å­—ç¬¦ä¸²æ„é€ å‡½æ•°
     acc(const char* str) : acc(std::string(str)) {}
 
-    // ¸¡µãÊı¹¹Ôìº¯Êı
-    acc(long double val, maxtype fixedPrecision = 15) {
-        constructFromFraction<long double>(val, fixedPrecision);
-    }
-    acc(double val, maxtype fixedPrecision = 15){
-        constructFromFraction<double>(val, fixedPrecision);
-    }
-    acc(float val, maxtype fixedPrecision = 15) {
-        constructFromFraction<float>(val, fixedPrecision);
+    // æµ®ç‚¹æ•°æ„é€ å‡½æ•°
+    acc(long double val, maxtype fixedPrecision = 15, maxtype(*fp)(long double) = &acc::roundUpOrDown<long double>) {
+        constructFromFraction<long double>(val, fixedPrecision,fp);
     }
 
-     
+    acc(double val, maxtype fixedPrecision = 15, maxtype(*fp)(double) = &acc::roundUpOrDown<double>) {
+        constructFromFraction<double>(val, fixedPrecision,fp);
+    }
 
-    // ¸´ÖÆ¹¹Ôìº¯Êı
+    acc(float val, maxtype fixedPrecision = 15, maxtype(*fp)(float) = &acc::roundUpOrDown<float>) {
+        constructFromFraction<float>(val, fixedPrecision,fp);
+    }
+
+
+
+    // å¤åˆ¶æ„é€ å‡½æ•°
     acc(const acc& other) = default;
 
-    // ÒÆ¶¯¹¹Ôìº¯Êı
+    // ç§»åŠ¨æ„é€ å‡½æ•°
     acc(acc&& other) noexcept = default;
 
-    // ¸³ÖµÔËËã·û
+    // èµ‹å€¼è¿ç®—ç¬¦
     acc& operator=(const acc& other) = default;
 
-    // ´Ó×Ö·û´®¸³Öµ
+    // ä»å­—ç¬¦ä¸²èµ‹å€¼
     acc& operator=(const std::string& str) {
         parseString(str);
         return *this;
@@ -194,7 +207,7 @@ public:
         return operator=(std::string(str));
     }
 
-    // ´ÓÕûÊı¸³Öµ
+    // ä»æ•´æ•°èµ‹å€¼
     acc& operator=(maxtype val) {
         *this = acc(val);
         return *this;
@@ -204,27 +217,27 @@ public:
         return operator=(static_cast<maxtype>(val));
     }
 
-    // ´Ó¸¡µãÊı¸³Öµ
+    // ä»æµ®ç‚¹æ•°èµ‹å€¼
     acc& operator=(long double val) {
         *this = acc(val);
         return *this;
     }
 
-    // ÀàĞÍ×ª»»ÔËËã·û
+    // ç±»å‹è½¬æ¢è¿ç®—ç¬¦
     operator maxtype() const {
         maxtype result = 0;
         maxtype multiplier = 1;
 
-        // Ö»×ª»»ÕûÊı²¿·Ö
+        // åªè½¬æ¢æ•´æ•°éƒ¨åˆ†
         maxtype integerDigits = entry.data.size() - entry.accuracy;
         if (integerDigits == 0) return 0;
 
-        // ´ÓµÍÎ»¿ªÊ¼×ª»»
+        // ä»ä½ä½å¼€å§‹è½¬æ¢
         for (size_t i = 0; i < integerDigits; i++) {
             maxtype idx = entry.data.size() - entry.accuracy - 1 - i;
             if (idx < entry.data.size()) {
                 result += static_cast<maxtype>(entry.data[idx]) * multiplier;
-                // ¼ì²éÒç³ö
+                // æ£€æŸ¥æº¢å‡º
                 if (multiplier > LLONG_MAX / 10) {
                     break;
                 }
@@ -239,18 +252,18 @@ public:
         return result;
     }
 
-    // ×ª»»Îªlong double
+    // è½¬æ¢ä¸ºlong double
     operator long double() const {
         long double result = 0.0;
         long double multiplier = 1.0;
 
-        // ´ÓµÍÎ»¿ªÊ¼¼ÆËã
+        // ä»ä½ä½å¼€å§‹è®¡ç®—
         for (auto it = entry.data.rbegin(); it != entry.data.rend(); ++it) {
             result += static_cast<long double>(*it) * multiplier;
             multiplier *= 10.0;
         }
 
-        // ¿¼ÂÇĞ¡Êı²¿·Ö
+        // è€ƒè™‘å°æ•°éƒ¨åˆ†
         if (entry.accuracy > 0) {
             result /= std::pow(10.0L, static_cast<long double>(entry.accuracy));
         }
@@ -262,25 +275,25 @@ public:
         return result;
     }
 
-    // ×ª»»Îª×Ö·û´®
+    // è½¬æ¢ä¸ºå­—ç¬¦ä¸²
     std::string to_string() const {
         return toString();
     }
 
-    // ¼Ó·¨ÔËËã·û
+    // åŠ æ³•è¿ç®—ç¬¦
     acc operator+(const acc& other) const {
-        // ¶ÔÆë¾«¶È
+        // å¯¹é½ç²¾åº¦
         acc thisCopy = *this;
         acc otherCopy = other;
         synchronizeAccuracy(thisCopy, otherCopy);
 
-        // ·ûºÅÏàÍ¬
+        // ç¬¦å·ç›¸åŒ
         if (thisCopy.entry.isPositive == otherCopy.entry.isPositive) {
             acc result;
             result.entry.isPositive = thisCopy.entry.isPositive;
             result.entry.accuracy = thisCopy.entry.accuracy;
 
-            // ´ÓµÍÎ»¿ªÊ¼Ïà¼Ó
+            // ä»ä½ä½å¼€å§‹ç›¸åŠ 
             std::deque<int8_t> sum;
             int carry = 0;
 
@@ -304,7 +317,7 @@ public:
             return result;
         }
 
-        // ·ûºÅ²»Í¬£¬×ª»»Îª¼õ·¨
+        // ç¬¦å·ä¸åŒï¼Œè½¬æ¢ä¸ºå‡æ³•
         if (thisCopy.entry.isPositive) {
             return thisCopy - (-otherCopy);
         }
@@ -313,20 +326,20 @@ public:
         }
     }
 
-    // ¼õ·¨ÔËËã·û
+    // å‡æ³•è¿ç®—ç¬¦
     acc operator-(const acc& other) const {
-        // ¶ÔÆë¾«¶È
+        // å¯¹é½ç²¾åº¦
         acc thisCopy = *this;
         acc otherCopy = other;
         synchronizeAccuracy(thisCopy, otherCopy);
 
-        // ·ûºÅ²»Í¬
+        // ç¬¦å·ä¸åŒ
         if (thisCopy.entry.isPositive != otherCopy.entry.isPositive) {
             acc result = thisCopy + (-otherCopy);
             return result;
         }
 
-        // ·ûºÅÏàÍ¬
+        // ç¬¦å·ç›¸åŒ
         bool isThisLarger = compareAbsolute(*this, other) >= 0;
         const acc& larger = isThisLarger ? thisCopy : otherCopy;
         const acc& smaller = isThisLarger ? otherCopy : thisCopy;
@@ -336,7 +349,7 @@ public:
             (!isThisLarger && !thisCopy.entry.isPositive);
         result.entry.accuracy = thisCopy.entry.accuracy;
 
-        // ´ÓµÍÎ»¿ªÊ¼Ïà¼õ
+        // ä»ä½ä½å¼€å§‹ç›¸å‡
         std::deque<int8_t> diff;
         int borrow = 0;
 
@@ -364,7 +377,7 @@ public:
         result.entry.data = diff;
         result.removeLeadingZeros();
 
-        // Èç¹û½á¹ûÎª0£¬È·±£·ûºÅÎªÕı
+        // å¦‚æœç»“æœä¸º0ï¼Œç¡®ä¿ç¬¦å·ä¸ºæ­£
         if (result.entry.data.size() == 1 && result.entry.data[0] == 0) {
             result.entry.isPositive = true;
         }
@@ -372,7 +385,7 @@ public:
         return result;
     }
 
-    // ³Ë·¨ÔËËã·û
+    // ä¹˜æ³•è¿ç®—ç¬¦
     acc operator*(const acc& other) const {
         acc result;
         result.entry.isPositive = !(entry.isPositive ^ other.entry.isPositive);
@@ -382,7 +395,7 @@ public:
         size_t len2 = other.entry.data.size();
         std::vector<int> product(len1 + len2, 0);
 
-        // Ä£ÄâÊÖ¹¤³Ë·¨
+        // æ¨¡æ‹Ÿæ‰‹å·¥ä¹˜æ³•
         for (int i = (int)len1 - 1; i >= 0; i--) {
             for (int j = (int)len2 - 1; j >= 0; j--) {
                 int mul = entry.data[i] * other.entry.data[j];
@@ -393,7 +406,7 @@ public:
             }
         }
 
-        // ×ª»»Îªdeque
+        // è½¬æ¢ä¸ºdeque
         result.entry.data.clear();
         for (int digit : product) {
             result.entry.data.push_back(static_cast<int8_t>(digit));
@@ -403,7 +416,7 @@ public:
         return result;
     }
 
-    // ¸´ºÏ¸³ÖµÔËËã·û
+    // å¤åˆèµ‹å€¼è¿ç®—ç¬¦
     acc& operator+=(const acc& other) {
         *this = *this + other;
         return *this;
@@ -424,26 +437,26 @@ public:
             throw std::runtime_error("Division by zero in modulo operation");
         }
 
-        // ¼ÆËã a / b µÄÕûÊıÉÌ£¨ÏòÁãÈ¡Õû£©
+        // è®¡ç®— a / b çš„æ•´æ•°å•†ï¼ˆå‘é›¶å–æ•´ï¼‰
         acc quotient = (maxtype)*this / (maxtype)other;
 
-        // »ñÈ¡ÕûÊı²¿·Ö£¨ÏòÁãÈ¡Õû£©
+        // è·å–æ•´æ•°éƒ¨åˆ†ï¼ˆå‘é›¶å–æ•´ï¼‰
         acc truncated = trunc(quotient);
 
-        // ¼ÆËãÓàÊı£ºa - truncated * b
+        // è®¡ç®—ä½™æ•°ï¼ša - truncated * b
         acc remainder = *this - truncated * other;
 
         return remainder;
     }
 
-    // ÏòÁãÈ¡ÕûµÄ¸¨Öúº¯Êı
+    // å‘é›¶å–æ•´çš„è¾…åŠ©å‡½æ•°
     static acc trunc(const acc& value) {
         acc result = value;
 
-        // Èç¹û value >= 0£¬ÒÆ³ıĞ¡Êı²¿·Ö£¨floor£©
-        // Èç¹û value < 0£¬Ò²ÒÆ³ıĞ¡Êı²¿·Ö£¬µ«ÒòÎªÊÇ¸ºÊı£¬Ïàµ±ÓÚÏòÉÏÈ¡Õû
+        // å¦‚æœ value >= 0ï¼Œç§»é™¤å°æ•°éƒ¨åˆ†ï¼ˆfloorï¼‰
+        // å¦‚æœ value < 0ï¼Œä¹Ÿç§»é™¤å°æ•°éƒ¨åˆ†ï¼Œä½†å› ä¸ºæ˜¯è´Ÿæ•°ï¼Œç›¸å½“äºå‘ä¸Šå–æ•´
         if (result.getAccuracy() > 0) {
-            // ÒÆ³ıĞ¡Êı²¿·ÖµÄËùÓĞÊı×Ö
+            // ç§»é™¤å°æ•°éƒ¨åˆ†çš„æ‰€æœ‰æ•°å­—
             for (maxtype i = 0; i < result.entry.accuracy; i++) {
                 if (!result.entry.data.empty()) {
                     result.entry.data.pop_back();
@@ -456,24 +469,24 @@ public:
         return result;
     }
 
-    // ³ı·¨º¯Êı£¬Ö¸¶¨½á¹û¾«¶È£¨Ğ¡ÊıÎ»Êı£©
+    // é™¤æ³•å‡½æ•°ï¼ŒæŒ‡å®šç»“æœç²¾åº¦ï¼ˆå°æ•°ä½æ•°ï¼‰
     static acc div(const acc& dividend, const acc& divisor, maxtype precision = 20) {
-        //³ıÁã´íÎó
+        //é™¤é›¶é”™è¯¯
         if (divisor.isZero()) {
             throw std::runtime_error("Division by zero");
         }
 
-        // ´¦Àí·ûºÅ
+        // å¤„ç†ç¬¦å·
         bool resultIsPositive = !(dividend.entry.isPositive ^ divisor.entry.isPositive);
 
-        // È¡¾ø¶ÔÖµ½øĞĞ³ı·¨
+        // å–ç»å¯¹å€¼è¿›è¡Œé™¤æ³•
         acc a = abs(dividend);
         acc b = abs(divisor);
 
-        // ¶ÔÆë¾«¶È
+        // å¯¹é½ç²¾åº¦
         synchronizeAccuracy(a, b);
 
-        // ÒÆ³ıĞ¡Êı²¿·Ö£¬×ª»»ÎªÕûÊı³ı·¨
+        // ç§»é™¤å°æ•°éƒ¨åˆ†ï¼Œè½¬æ¢ä¸ºæ•´æ•°é™¤æ³•
         maxtype scaleFactor = a.entry.accuracy;
         for (maxtype i = 0; i < scaleFactor; i++) {
             if (!a.entry.data.empty()) a.entry.data.pop_back();
@@ -482,10 +495,10 @@ public:
         a.entry.accuracy = 0;
         b.entry.accuracy = 0;
 
-        // Ö´ĞĞ³¤³ı·¨
+        // æ‰§è¡Œé•¿é™¤æ³•
         acc result = longDivision(a, b, precision);
 
-        // »Ö¸´·ûºÅ
+        // æ¢å¤ç¬¦å·
         result.entry.isPositive = resultIsPositive;
         if (result.isZero()) {
             result.entry.isPositive = true;
@@ -494,39 +507,39 @@ public:
         return result;
     }
 
-    // ³ı·¨ÔËËã·û£¨Ä¬ÈÏ¾«¶È£©
+    // é™¤æ³•è¿ç®—ç¬¦ï¼ˆé»˜è®¤ç²¾åº¦ï¼‰
     acc operator/(const acc& other) const {
         return div(*this, other, entry.accuracy > other.entry.accuracy ?
             entry.accuracy : other.entry.accuracy);
     }
 
-    // ´ø¾«¶ÈµÄ³ı·¨ÔËËã·û
+    // å¸¦ç²¾åº¦çš„é™¤æ³•è¿ç®—ç¬¦
     acc operator/(const std::pair<const acc&, maxtype>& params) const {
         const acc& other = params.first;
         maxtype precision = params.second;
         return div(*this, other, precision);
     }
 
-    // Ç°×ºµİÔöÔËËã·û
+    // å‰ç¼€é€’å¢è¿ç®—ç¬¦
     acc& operator++() {
         *this = *this + acc(1);
         return *this;
     }
 
-    // ºó×ºµİÔöÔËËã·û
+    // åç¼€é€’å¢è¿ç®—ç¬¦
     acc operator++(int) {
         acc temp = *this;
         ++(*this);
         return temp;
     }
 
-    // Ç°×ºµİ¼õÔËËã·û
+    // å‰ç¼€é€’å‡è¿ç®—ç¬¦
     acc& operator--() {
         *this = *this - acc(1);
         return *this;
     }
 
-    // ºó×ºµİ¼õÔËËã·û
+    // åç¼€é€’å‡è¿ç®—ç¬¦
     acc operator--(int) {
         acc temp = *this;
         --(*this);
@@ -538,7 +551,7 @@ public:
         return result;
     }
 
-    // È¡·´ÔËËã·û
+    // å–åè¿ç®—ç¬¦
     acc operator-() const {
         acc result = *this;
         if (!(result.entry.data.size() == 1 && result.entry.data[0] == 0)) {
@@ -547,9 +560,9 @@ public:
         return result;
     }
 
-    //×óÒÆ²Ù×÷·û
+    //å·¦ç§»æ“ä½œç¬¦
     acc operator<< (const acc& shiftCount) const {
-        //´íÎó´¦Àí
+        //é”™è¯¯å¤„ç†
         if (shiftCount.entry.accuracy > 0) {
             throw std::domain_error("Shift count must be integer");
         }
@@ -563,14 +576,14 @@ public:
         return result;
     }
 
-    //ÓÒÒÆ²Ù×÷·û
+    //å³ç§»æ“ä½œç¬¦
     acc operator>> (const acc&) const {
         acc result = *this;
         result *= 2;
         return result;
     }
 
-    // ±È½ÏÔËËã·û
+    // æ¯”è¾ƒè¿ç®—ç¬¦
     bool operator==(const acc& other) const {
         if (entry.isPositive != other.entry.isPositive) return false;
         acc a = *this;
@@ -583,10 +596,10 @@ public:
         }
         return true;
     }
-    // É¾³ıÄÚÖÃÔËËã·û
+    // åˆ é™¤å†…ç½®è¿ç®—ç¬¦
     template<typename T>
     bool operator==(const T& other) const {
-        // ¿ÉÄÜĞèÒªstatic_assert»òSFINAEÏŞÖÆÀàĞÍ
+        // å¯èƒ½éœ€è¦static_assertæˆ–SFINAEé™åˆ¶ç±»å‹
         return this->value == other;
     }
     //template<typename T>
@@ -600,17 +613,17 @@ public:
 
     bool operator<(const acc& other) const {
         if (entry.isPositive != other.entry.isPositive) {
-            return !entry.isPositive;  // ¸ºÊı < ÕıÊı
+            return !entry.isPositive;  // è´Ÿæ•° < æ­£æ•°
         }
 
         int cmp = compareAbsolute(*this, other);
         if (cmp == 0) return false;
 
         if (entry.isPositive) {
-            return cmp < 0;  // ÕıÊı£º¾ø¶ÔÖµĞ¡µÄ¸üĞ¡
+            return cmp < 0;  // æ­£æ•°ï¼šç»å¯¹å€¼å°çš„æ›´å°
         }
         else {
-            return cmp > 0;  // ¸ºÊı£º¾ø¶ÔÖµ´óµÄ¸üĞ¡
+            return cmp > 0;  // è´Ÿæ•°ï¼šç»å¯¹å€¼å¤§çš„æ›´å°
         }
     }
 
@@ -626,30 +639,30 @@ public:
         return !(*this < other);
     }
 
-    // ¾ø¶ÔÖµº¯Êı
+    // ç»å¯¹å€¼å‡½æ•°
     static acc abs(const acc& value) {
         acc result = value;
         result.entry.isPositive = true;
         return result;
     }
 
-    // »ñÈ¡¾«¶È
+    // è·å–ç²¾åº¦
     maxtype getAccuracy() const {
         return entry.accuracy;
     }
 
-    // ÉèÖÃ¾«¶È
+    // è®¾ç½®ç²¾åº¦
     void setAccuracy(maxtype newAccuracy) {
         if (newAccuracy == entry.accuracy) return;
 
         if (newAccuracy > entry.accuracy) {
-            // Ôö¼Ó¾«¶È£¬²¹Áã
+            // å¢åŠ ç²¾åº¦ï¼Œè¡¥é›¶
             for (maxtype i = entry.accuracy; i < newAccuracy; i++) {
                 entry.data.push_back(0);
             }
         }
         else {
-            // ¼õÉÙ¾«¶È£¬¿ÉÄÜĞèÒªËÄÉáÎåÈë
+            // å‡å°‘ç²¾åº¦ï¼Œå¯èƒ½éœ€è¦å››èˆäº”å…¥
             maxtype diff = entry.accuracy - newAccuracy;
             for (maxtype i = 0; i < diff; i++) {
                 entry.data.pop_back();
@@ -659,7 +672,7 @@ public:
         removeLeadingZeros();
     }
 
-    // ×ª»»Îª×Ö·û´®
+    // è½¬æ¢ä¸ºå­—ç¬¦ä¸²
     std::string toString() const {
         if (entry.data.empty()) {
             return "0";
@@ -667,31 +680,31 @@ public:
 
         std::string result;
 
-        // ·ûºÅ
+        // ç¬¦å·
         if (!entry.isPositive && !(entry.data.size() == 1 && entry.data[0] == 0)) {
             result += '-';
         }
 
-        // ÕûÊı²¿·Ö
+        // æ•´æ•°éƒ¨åˆ†
         maxtype integerDigits = entry.data.size() - entry.accuracy;
 
         if (integerDigits <= 0) {
-            // Ã»ÓĞÕûÊı²¿·Ö
+            // æ²¡æœ‰æ•´æ•°éƒ¨åˆ†
             result += '0';
         }
         else {
-            // È·±£²»Ô½½ç
+            // ç¡®ä¿ä¸è¶Šç•Œ
             maxtype maxIdx = std::min(integerDigits, static_cast<maxtype>(entry.data.size()));
             for (maxtype i = 0; i < maxIdx; i++) {
                 result += static_cast<char>('0' + entry.data[i]);
             }
         }
 
-        // Ğ¡Êı²¿·Ö
+        // å°æ•°éƒ¨åˆ†
         if (entry.accuracy > 0) {
             result += '.';
 
-            // È·±£²»Ô½½ç
+            // ç¡®ä¿ä¸è¶Šç•Œ
             maxtype startIdx = std::min(integerDigits, static_cast<maxtype>(entry.data.size()));
             maxtype endIdx = std::min(startIdx + entry.accuracy, (maxtype)entry.data.size());
 
@@ -701,7 +714,7 @@ public:
                 }
             }
             else {
-                // Èç¹ûstartIdxÔ½½ç£¬Ìí¼Ó0
+                // å¦‚æœstartIdxè¶Šç•Œï¼Œæ·»åŠ 0
                 for (maxtype i = 0; i < entry.accuracy; i++) {
                     result += '0';
                 }
@@ -711,13 +724,13 @@ public:
         return result;
     }
 
-    // Êä³öÔËËã·û
+    // è¾“å‡ºè¿ç®—ç¬¦
     friend std::ostream& operator<<(std::ostream& os, const acc& value) {
         os << value.toString();
         return os;
     }
 
-    // ÊäÈëÔËËã·û
+    // è¾“å…¥è¿ç®—ç¬¦
     friend std::istream& operator>>(std::istream& is, acc& value) {
         std::string str;
         is >> str;
@@ -729,74 +742,74 @@ public:
         return a < b ? a : b;
     }
 
-    //×ª»»½øÖÆ£¨Í¨ÓÃ·½Ê½£©
+    //è½¬æ¢è¿›åˆ¶ï¼ˆé€šç”¨æ–¹å¼ï¼‰
     std::string convertScale(const acc& value, const acc& scale = 10) {
-        
+
         std::string ret;
     }
 
     acc convertScale(const std::string str) {
         if (str.empty()) return 0;
-        //Æ¥ÅäÎÄ±¾¸ñÊ½ÏÂµÄ·Ç±ê×¼¸ñÊ½£º(Êı¾İ£¨Êı×Ö»ò×ÖÄ¸»òËüÃÇµÄ»ìºÏÌå£©)_Ê®½øÖÆÏÂ±í´ïµÄÊıÑ§½øÖÆ
+        //åŒ¹é…æ–‡æœ¬æ ¼å¼ä¸‹çš„éæ ‡å‡†æ ¼å¼ï¼š(æ•°æ®ï¼ˆæ•°å­—æˆ–å­—æ¯æˆ–å®ƒä»¬çš„æ··åˆä½“ï¼‰)_åè¿›åˆ¶ä¸‹è¡¨è¾¾çš„æ•°å­¦è¿›åˆ¶
         std::regex pattern(R"(^\([0-9a-zA-Z]+\)_[0-9]+$)");
         if (!std::regex_match(str, pattern)) {
             return 0;
         }
         auto textItBegin = str.begin();
-        textItBegin++;//Ìø¹ıÇ°ÖÃ(·ûºÅ
+        textItBegin++;//è·³è¿‡å‰ç½®(ç¬¦å·
         auto textItEnd = str.begin();
         while (*textItEnd != ')') {
             textItEnd++;
         }
-        //»ñÈ¡Êı¾İ²¿·Ö
+        //è·å–æ•°æ®éƒ¨åˆ†
         std::string value(textItBegin, textItEnd);
     }
 
-#pragma region Êı¾İÀàĞÍ¼ì²é
+#pragma region æ•°æ®ç±»å‹æ£€æŸ¥
 
-    //¼ì²éÊÇ·ñÎªÊ®½øÖÆ×ÖÃæÖµ³£Á¿
+    //æ£€æŸ¥æ˜¯å¦ä¸ºåè¿›åˆ¶å­—é¢å€¼å¸¸é‡
     bool isDec(const std::string& str) {
-        // ÔÊĞí¶ººÅ£¨ÎŞ¿Õ¸ñ£©»ò¿Õ¸ñ×÷Îª·Ö¸ô·û£¬µ«²»ÔÊĞí"¶ººÅ+¿Õ¸ñ"
-        // ÈıÎ»Êı×Ö×÷ÎªÒ»¶Î·Ö¸ô·û·Ö¸ôµÄÊı×Ö
-        std::regex pattern(R"(^[0-9]+(?:(?:[,£¬][0-9]{3})|(?: [0-9]{3}))*(?:\.[0-9]*)?$|^\.[0-9]+$)");
+        // å…è®¸é€—å·ï¼ˆæ— ç©ºæ ¼ï¼‰æˆ–ç©ºæ ¼ä½œä¸ºåˆ†éš”ç¬¦ï¼Œä½†ä¸å…è®¸"é€—å·+ç©ºæ ¼"
+        // ä¸‰ä½æ•°å­—ä½œä¸ºä¸€æ®µåˆ†éš”ç¬¦åˆ†éš”çš„æ•°å­—
+        std::regex pattern(R"(^[0-9]+(?:(?:[,ï¼Œ][0-9]{3})|(?: [0-9]{3}))*(?:\.[0-9]*)?$|^\.[0-9]+$)");
         return std::regex_match(str, pattern);
     }
 
-    //¼ì²éÊÇ·ñÎª°Ë½øÖÆ×ÖÃæÖµ³£Á¿
+    //æ£€æŸ¥æ˜¯å¦ä¸ºå…«è¿›åˆ¶å­—é¢å€¼å¸¸é‡
     bool isOct(const std::string& str) {
         std::regex pattern(R"(^0[0-7]+(?:'[0-7]+)*$)");
         return std::regex_match(str, pattern);
     }
 
-    //¼ì²éÊÇ·ñÎª¶ş½øÖÆ×ÖÃæÖµ³£Á¿
+    //æ£€æŸ¥æ˜¯å¦ä¸ºäºŒè¿›åˆ¶å­—é¢å€¼å¸¸é‡
     bool isBin(const std::string& str) {
         std::regex pattern(R"(^0[bB][01]+(?:'[01]+)*$)");
         return std::regex_match(str, pattern);
     }
 
-    //¼ì²éÊÇ·ñÎªÊ®Áù½øÖÆ×ÖÃæÖµ³£Á¿
+    //æ£€æŸ¥æ˜¯å¦ä¸ºåå…­è¿›åˆ¶å­—é¢å€¼å¸¸é‡
     bool isHex(const std::string& str) {
         std::regex pattern(R"(^0[xX][0-9A-Fa-f]+(?:'[0-9A-Fa-f]+)*$)");
         return std::regex_match(str, pattern);
     }
 
-    //¼ì²éÊÇ·ñÎªÊ®Áù½øÖÆ×ÖÃæÖµ³£Á¿
+    //æ£€æŸ¥æ˜¯å¦ä¸ºåå…­è¿›åˆ¶å­—é¢å€¼å¸¸é‡
    /* bool isHex(const std::string& str) {
-        // ĞÎÊ½£ºÕûÊı²¿·Ö'ÕûÊı²¿·Ö.Ğ¡Êı²¿·Ö'Ğ¡Êı²¿·ÖÖ¸Êı²¿·Ö
+        // å½¢å¼ï¼šæ•´æ•°éƒ¨åˆ†'æ•´æ•°éƒ¨åˆ†.å°æ•°éƒ¨åˆ†'å°æ•°éƒ¨åˆ†æŒ‡æ•°éƒ¨åˆ†
         std::regex pattern(R"(^\d+(?:'\d+)*(\.\d+(?:'\d+)*)?([eE][+-]?\d+(?:'\d+)*)?$)");        return std::regex_match(str, pattern);
         return std::regex_match(str, pattern);
     }*/
 #pragma endregion
 
 private:
-    //ÖØÖÃËùÓĞÊı¾İ
+    //é‡ç½®æ‰€æœ‰æ•°æ®
     void resetData(void) {
         this->entry.isPositive = true;
         this->entry.data = { 0 };
         this->entry.accuracy = 0;
     }
 
-    // ¹¤¾ßº¯Êı£º½«long long×ª»»ÎªÊı¾İ
+    // å·¥å…·å‡½æ•°ï¼šå°†long longè½¬æ¢ä¸ºæ•°æ®
     void longlongToData(maxtype val) {
         entry.data.clear();
 
@@ -811,7 +824,7 @@ private:
         }
     }
 
-    // ÒÆ³ı×Ö·û´®ÖĞµÄ·Ö¸ô·û£¨µ¥ÒıºÅ£©
+    // ç§»é™¤å­—ç¬¦ä¸²ä¸­çš„åˆ†éš”ç¬¦ï¼ˆå•å¼•å·ï¼‰
     std::string removeSeparators(const std::string& str) {
         std::string result;
         for (char c : str) {
@@ -822,9 +835,9 @@ private:
         return result;
     }
 
-    // ¹¤¾ßº¯Êı£º½âÎö×Ö·û´®£¨·Ö·¢Æ÷£©
+    // å·¥å…·å‡½æ•°ï¼šè§£æå­—ç¬¦ä¸²ï¼ˆåˆ†å‘å™¨ï¼‰
     void parseString(const std::string& str) {
-        // ÒÆ³ıËùÓĞ·Ö¸ô·û
+        // ç§»é™¤æ‰€æœ‰åˆ†éš”ç¬¦
         std::string withoutSeparators = removeSeparators(str);
 
         if (withoutSeparators.empty()) {
@@ -832,41 +845,41 @@ private:
             return;
         }
 
-        // ¼ì²é¿ÆÑ§¼ÆÊı·¨£¨ÓÅÏÈ¼¶×î¸ß£¬ÒòÎª¿ÉÄÜÓëÆäËû½øÖÆ½áºÏ£©
+        // æ£€æŸ¥ç§‘å­¦è®¡æ•°æ³•ï¼ˆä¼˜å…ˆçº§æœ€é«˜ï¼Œå› ä¸ºå¯èƒ½ä¸å…¶ä»–è¿›åˆ¶ç»“åˆï¼‰
         if (isScientific(withoutSeparators)) {
             parseScientific(withoutSeparators);
         }
-        // ¼ì²é¶ş½øÖÆ
+        // æ£€æŸ¥äºŒè¿›åˆ¶
         else if (isBin(str)) {
             parseBinary(str);
         }
-        // ¼ì²éÊ®Áù½øÖÆ
+        // æ£€æŸ¥åå…­è¿›åˆ¶
         else if (isHex(str)) {
             parseHexadecimal(str);
         }
-        // ¼ì²é°Ë½øÖÆ
+        // æ£€æŸ¥å…«è¿›åˆ¶
         else if (isOct(str)) {
             parseOctal(str);
         }
-        // ¼ì²éÊ®½øÖÆ
+        // æ£€æŸ¥åè¿›åˆ¶
         else if (isDec(str)) {
             parseDecimal(withoutSeparators);
         }
         else {
-            // ÎŞ·¨Ê¶±ğµÄ¸ñÊ½£¬ÉèÎª0
+            // æ— æ³•è¯†åˆ«çš„æ ¼å¼ï¼Œè®¾ä¸º0
             parseDecimal("0");
         }
     }
 
-    // ¹¤¾ßº¯Êı£º¼ì²éÊÇ·ñÎª¿ÆÑ§¼ÆÊı·¨
+    // å·¥å…·å‡½æ•°ï¼šæ£€æŸ¥æ˜¯å¦ä¸ºç§‘å­¦è®¡æ•°æ³•
     bool isScientific(const std::string& str) {
-        // ²éÕÒe»òE£¬ÇÒ²»ÔÚ¿ªÍ·»ò½áÎ²
+        // æŸ¥æ‰¾eæˆ–Eï¼Œä¸”ä¸åœ¨å¼€å¤´æˆ–ç»“å°¾
         size_t ePos = str.find_first_of("eE");
         if (ePos == std::string::npos || ePos == 0 || ePos == str.length() - 1) {
             return false;
         }
 
-        // e/EÖ®Ç°±ØĞëÓĞÖÁÉÙÒ»¸öÊı×Ö
+        // e/Eä¹‹å‰å¿…é¡»æœ‰è‡³å°‘ä¸€ä¸ªæ•°å­—
         bool hasDigitBeforeE = false;
         for (size_t i = 0; i < ePos; i++) {
             if (isdigit(str[i]) || str[i] == '.') {
@@ -876,34 +889,34 @@ private:
         }
         if (!hasDigitBeforeE) return false;
 
-        // e/EÖ®ºó±ØĞëÊÇÓĞĞ§µÄÕûÊı£¨¿ÉÄÜ´ø·ûºÅ£©
+        // e/Eä¹‹åå¿…é¡»æ˜¯æœ‰æ•ˆçš„æ•´æ•°ï¼ˆå¯èƒ½å¸¦ç¬¦å·ï¼‰
         size_t afterE = ePos + 1;
         if (str[afterE] == '+' || str[afterE] == '-') {
             afterE++;
         }
 
-        // ¼ì²ée/EÖ®ºóÊÇ·ñÓĞÊı×Ö
+        // æ£€æŸ¥e/Eä¹‹åæ˜¯å¦æœ‰æ•°å­—
         for (size_t i = afterE; i < str.length(); i++) {
             if (!isdigit(str[i])) return false;
         }
         return true;
     }
 
-    // ´¦Àí¶ş½øÖÆ
+    // å¤„ç†äºŒè¿›åˆ¶
     void parseBinary(const std::string& str) {
-        // ÒÆ³ı·Ö¸ô·û
+        // ç§»é™¤åˆ†éš”ç¬¦
         std::string withoutSeparators = removeSeparators(str);
 
-        // Ìø¹ıÇ°×º
+        // è·³è¿‡å‰ç¼€
         std::string binaryDigits = withoutSeparators.substr(2);
 
-        // ×ª»»ÎªÊ®½øÖÆ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶
         uint64_t value = 0;
         for (char c : binaryDigits) {
             value = (value << 1) | (static_cast<uint64_t>(c) - static_cast <uint64_t>('0'));
         }
 
-        // ´æ´¢µ½entry
+        // å­˜å‚¨åˆ°entry
         entry.data.clear();
         entry.accuracy = 0;
         entry.isPositive = true;
@@ -913,17 +926,17 @@ private:
             return;
         }
 
-        // ×ª»»ÎªÊ®½øÖÆÊı×ÖĞòÁĞ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶æ•°å­—åºåˆ—
         while (value > 0) {
             entry.data.push_front(value % 10);
             value /= 10;
         }
     }
 
-    // ´¦ÀíÊ®½øÖÆ
+    // å¤„ç†åè¿›åˆ¶
     void parseDecimal(const std::string& str) {
 
-        // ´¦Àí·ûºÅ
+        // å¤„ç†ç¬¦å·
         size_t start = 0;
         if (str[0] == '-') {
             entry.isPositive = false;
@@ -937,11 +950,11 @@ private:
             entry.isPositive = true;
         }
 
-        // ²éÕÒĞ¡Êıµã
+        // æŸ¥æ‰¾å°æ•°ç‚¹
         size_t dotPos = str.find('.', start);
         bool hasDot = (dotPos != std::string::npos);
 
-        // ÌáÈ¡Êı×Ö²¿·Ö
+        // æå–æ•°å­—éƒ¨åˆ†
         std::string digits;
         for (size_t i = start; i < str.length(); i++) {
             if (str[i] == '.') continue;
@@ -949,7 +962,7 @@ private:
                 digits.push_back(str[i]);
             }
             else {
-                break;  // Óöµ½·ÇÊı×Ö×Ö·û£¬Í£Ö¹½âÎö
+                break;  // é‡åˆ°éæ•°å­—å­—ç¬¦ï¼Œåœæ­¢è§£æ
             }
         }
 
@@ -958,7 +971,7 @@ private:
             return;
         }
 
-        // ÒÆ³ıÇ°µ¼Áã£¨±£Áô×îºóÒ»¸öÁã£©
+        // ç§»é™¤å‰å¯¼é›¶ï¼ˆä¿ç•™æœ€åä¸€ä¸ªé›¶ï¼‰
         size_t firstNonZero = 0;
         while (firstNonZero < digits.length() - 1 && digits[firstNonZero] == '0') {
             firstNonZero++;
@@ -970,18 +983,18 @@ private:
             return;
         }
 
-        // ×ª»»ÎªÊı×ÖĞòÁĞ
+        // è½¬æ¢ä¸ºæ•°å­—åºåˆ—
         for (char c : digits) {
             entry.data.push_back(c - '0');
         }
 
-        // ÉèÖÃ¾«¶È
+        // è®¾ç½®ç²¾åº¦
         if (hasDot) {
-            // ¼ÆËãĞ¡ÊıÎ»Êı
+            // è®¡ç®—å°æ•°ä½æ•°
             size_t decimalStart = dotPos + 1;
             size_t decimalEnd = str.length();
 
-            // ÕÒµ½Ğ¡Êı²¿·ÖµÄ½áÊøÎ»ÖÃ£¨ÅÅ³ı¿ÉÄÜµÄ·ÇÊı×Ö×Ö·û£©
+            // æ‰¾åˆ°å°æ•°éƒ¨åˆ†çš„ç»“æŸä½ç½®ï¼ˆæ’é™¤å¯èƒ½çš„éæ•°å­—å­—ç¬¦ï¼‰
             for (size_t i = decimalStart; i < str.length(); i++) {
                 if (!isdigit(str[i])) {
                     decimalEnd = i;
@@ -991,13 +1004,13 @@ private:
 
             entry.accuracy = decimalEnd - decimalStart;
 
-            // ÒÆ³ıĞ¡Êı²¿·ÖÎ²²¿µÄÁã
+            // ç§»é™¤å°æ•°éƒ¨åˆ†å°¾éƒ¨çš„é›¶
             while (entry.accuracy > 0 && entry.data.back() == 0) {
                 entry.data.pop_back();
                 entry.accuracy--;
             }
 
-            // ÌØÊâ´¦Àí£ºÈç¹ûÕûÊı²¿·ÖÎª¿Õ£¨Èç.5£©£¬Ìí¼ÓÇ°µ¼0
+            // ç‰¹æ®Šå¤„ç†ï¼šå¦‚æœæ•´æ•°éƒ¨åˆ†ä¸ºç©ºï¼ˆå¦‚.5ï¼‰ï¼Œæ·»åŠ å‰å¯¼0
             if (dotPos == start) {
                 entry.data.push_front(0);
             }
@@ -1006,22 +1019,22 @@ private:
             entry.accuracy = 0;
         }
 
-        // ÌØÊâ´¦Àí£º-0µÄÇé¿ö
+        // ç‰¹æ®Šå¤„ç†ï¼š-0çš„æƒ…å†µ
         if (entry.data.size() == 1 && entry.data[0] == 0) {
             entry.isPositive = true;
         }
 
-        // ¹æ·¶»¯£ºÒÆ³ıÇ°µ¼Áã
+        // è§„èŒƒåŒ–ï¼šç§»é™¤å‰å¯¼é›¶
         removeLeadingZeros();
     }
 
-    // ´¦ÀíÊ®Áù½øÖÆ
+    // å¤„ç†åå…­è¿›åˆ¶
     void parseHexadecimal(const std::string& str) {
 
-        // Ìø¹ıÇ°×º
+        // è·³è¿‡å‰ç¼€
         std::string hexDigits = str.substr(2);
 
-        // ×ª»»ÎªÊ®½øÖÆ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶
         uint64_t value = 0;
         for (char c : hexDigits) {
             int digit;
@@ -1040,7 +1053,7 @@ private:
             value = value * 16 + digit;
         }
 
-        // ´æ´¢µ½entry
+        // å­˜å‚¨åˆ°entry
         entry.data.clear();
         entry.accuracy = 0;
         entry.isPositive = true;
@@ -1050,26 +1063,26 @@ private:
             return;
         }
 
-        // ×ª»»ÎªÊ®½øÖÆÊı×ÖĞòÁĞ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶æ•°å­—åºåˆ—
         while (value > 0) {
             entry.data.push_front(value % 10);
             value /= 10;
         }
     }
 
-    // ´¦Àí°Ë½øÖÆ
+    // å¤„ç†å…«è¿›åˆ¶
     void parseOctal(const std::string& str) {
 
-        // Ìø¹ıÇ°×º0
+        // è·³è¿‡å‰ç¼€0
         std::string octalDigits = str.substr(1);
 
-        // ×ª»»ÎªÊ®½øÖÆ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶
         uint64_t value = 0;
         for (char c : octalDigits) {
             value = value * 8 + (static_cast<uint64_t>(c) - static_cast<uint64_t>('0'));
         }
 
-        // ´æ´¢µ½entry
+        // å­˜å‚¨åˆ°entry
         entry.data.clear();
         entry.accuracy = 0;
         entry.isPositive = true;
@@ -1079,38 +1092,38 @@ private:
             return;
         }
 
-        // ×ª»»ÎªÊ®½øÖÆÊı×ÖĞòÁĞ
+        // è½¬æ¢ä¸ºåè¿›åˆ¶æ•°å­—åºåˆ—
         while (value > 0) {
             entry.data.push_front(value % 10);
             value /= 10;
         }
     }
 
-    //´¦Àí¿ÆÑ§¼ÇÊı·¨
+    //å¤„ç†ç§‘å­¦è®°æ•°æ³•
     void parseScientific(const std::string& str) {
-        // ÕÒµ½e/EµÄÎ»ÖÃ
+        // æ‰¾åˆ°e/Eçš„ä½ç½®
         size_t ePos = str.find_first_of("eE");
 
-        // ½âÎöÎ²Êı²¿·Ö
+        // è§£æå°¾æ•°éƒ¨åˆ†
         std::string mantissa = str.substr(0, ePos);
         parseDecimal(mantissa);
 
-        // ½âÎöÖ¸Êı²¿·Ö
+        // è§£ææŒ‡æ•°éƒ¨åˆ†
         std::string exponentStr = str.substr(ePos + 1);
 
-        // ½âÎöÖ¸Êı£¨ÓĞ·ûºÅÕûÊı£©
+        // è§£ææŒ‡æ•°ï¼ˆæœ‰ç¬¦å·æ•´æ•°ï¼‰
         maxtype exponent = 0;
         try {
             exponent = std::stoll(exponentStr);
         }
         catch (...) {
-            // ½âÎöÊ§°Ü£¬ÉèÎª0
+            // è§£æå¤±è´¥ï¼Œè®¾ä¸º0
             exponent = 0;
         }
 
-        // ¸ù¾İÖ¸Êıµ÷ÕûĞ¡ÊıµãºÍ¾«¶È
+        // æ ¹æ®æŒ‡æ•°è°ƒæ•´å°æ•°ç‚¹å’Œç²¾åº¦
         if (exponent > 0) {
-            // Ğ¡ÊıµãÓÒÒÆ
+            // å°æ•°ç‚¹å³ç§»
             for (int64_t i = 0; i < exponent; i++) {
                 if (entry.accuracy > 0) {
                     entry.accuracy--;
@@ -1121,10 +1134,10 @@ private:
             }
         }
         else if (exponent < 0) {
-            // Ğ¡Êıµã×óÒÆ
+            // å°æ•°ç‚¹å·¦ç§»
             maxtype absExp = -exponent;
             if (absExp > static_cast<int64_t>(entry.data.size())) {
-                // ĞèÒª²¹Áã
+                // éœ€è¦è¡¥é›¶
                 maxtype zerosNeeded = absExp - entry.data.size();
                 for (maxtype i = 0; i < zerosNeeded; i++) {
                     entry.data.push_front(0);
@@ -1136,15 +1149,15 @@ private:
             }
         }
 
-        // ÖØĞÂ¹æ·¶»¯
+        // é‡æ–°è§„èŒƒåŒ–
         removeLeadingZeros();
         removeTrailingZeros();
     }
 
 
-    // ¹¤¾ßº¯Êı£ºÒÆ³ıÇ°µ¼Áã
+    // å·¥å…·å‡½æ•°ï¼šç§»é™¤å‰å¯¼é›¶
     void removeLeadingZeros() {
-        // Ö»ÒÆ³ıÕûÊı²¿·ÖµÄÇ°µ¼Áã£¬±£ÁôĞ¡Êı²¿·Ö
+        // åªç§»é™¤æ•´æ•°éƒ¨åˆ†çš„å‰å¯¼é›¶ï¼Œä¿ç•™å°æ•°éƒ¨åˆ†
         maxtype integerDigits = entry.data.size() - entry.accuracy;
 
         while (integerDigits > 1 && entry.data[0] == 0) {
@@ -1152,7 +1165,7 @@ private:
             integerDigits--;
         }
 
-        // Èç¹ûËùÓĞÎ»¶¼ÊÇ0£¬±£ÁôÒ»¸ö0
+        // å¦‚æœæ‰€æœ‰ä½éƒ½æ˜¯0ï¼Œä¿ç•™ä¸€ä¸ª0
         if (entry.data.empty()) {
             entry.data.push_back(0);
             entry.accuracy = 0;
@@ -1160,7 +1173,7 @@ private:
         }
     }
 
-    // ÒÆ³ıÎ²ËæÁã£¨Õë¶ÔĞ¡Êı²¿·Ö£©
+    // ç§»é™¤å°¾éšé›¶ï¼ˆé’ˆå¯¹å°æ•°éƒ¨åˆ†ï¼‰
     void removeTrailingZeros() {
         while (entry.accuracy > 0 && entry.data.size() > 1 && entry.data.back() == 0) {
             entry.data.pop_back();
@@ -1168,12 +1181,12 @@ private:
         }
     }
 
-    // ¹¤¾ßº¯Êı£ºÍ¬²½Á½¸öÊıµÄ¾«¶È
+    // å·¥å…·å‡½æ•°ï¼šåŒæ­¥ä¸¤ä¸ªæ•°çš„ç²¾åº¦
     static void synchronizeAccuracy(acc& a, acc& b) {
         if (a.entry.accuracy == b.entry.accuracy) return;
 
         if (a.entry.accuracy < b.entry.accuracy) {
-            // ÎªaÌí¼ÓÎ²ËæÁã
+            // ä¸ºaæ·»åŠ å°¾éšé›¶
             maxtype diff = b.entry.accuracy - a.entry.accuracy;
             for (maxtype i = 0; i < diff; i++) {
                 a.entry.data.push_back(0);
@@ -1181,7 +1194,7 @@ private:
             a.entry.accuracy = b.entry.accuracy;
         }
         else {
-            // ÎªbÌí¼ÓÎ²ËæÁã
+            // ä¸ºbæ·»åŠ å°¾éšé›¶
             maxtype diff = a.entry.accuracy - b.entry.accuracy;
             for (maxtype i = 0; i < diff; i++) {
                 b.entry.data.push_back(0);
@@ -1190,13 +1203,13 @@ private:
         }
     }
 
-    // ¹¤¾ßº¯Êı£º±È½Ï¾ø¶ÔÖµ´óĞ¡
+    // å·¥å…·å‡½æ•°ï¼šæ¯”è¾ƒç»å¯¹å€¼å¤§å°
     static int compareAbsolute(const acc& a, const acc& b) {
         acc aCopy = a;
         acc bCopy = b;
         synchronizeAccuracy(aCopy, bCopy);
 
-        // ±È½ÏÕûÊı²¿·Ö³¤¶È
+        // æ¯”è¾ƒæ•´æ•°éƒ¨åˆ†é•¿åº¦
         maxtype aIntDigits = aCopy.entry.data.size() - aCopy.entry.accuracy;
         maxtype bIntDigits = bCopy.entry.data.size() - bCopy.entry.accuracy;
 
@@ -1204,7 +1217,7 @@ private:
             return (aIntDigits > bIntDigits) ? 1 : -1;
         }
 
-        // ÖğÎ»±È½Ï
+        // é€ä½æ¯”è¾ƒ
         size_t minSize = std::min(aCopy.entry.data.size(), bCopy.entry.data.size());
         for (size_t i = 0; i < minSize; i++) {
             if (aCopy.entry.data[i] != bCopy.entry.data[i]) {
@@ -1212,15 +1225,15 @@ private:
             }
         }
 
-        // Èç¹û³¤¶È²»Í¬µ«Ç°Ãæ¶¼ÏàµÈ£¬³¤¶È³¤µÄ¸ü´ó
+        // å¦‚æœé•¿åº¦ä¸åŒä½†å‰é¢éƒ½ç›¸ç­‰ï¼Œé•¿åº¦é•¿çš„æ›´å¤§
         if (aCopy.entry.data.size() != bCopy.entry.data.size()) {
             return (aCopy.entry.data.size() > bCopy.entry.data.size()) ? 1 : -1;
         }
 
-        return 0;  // ÏàµÈ
+        return 0;  // ç›¸ç­‰
     }
 
-    // ³¤³ı·¨ºËĞÄËã·¨
+    // é•¿é™¤æ³•æ ¸å¿ƒç®—æ³•
     static acc longDivision(const acc& dividend, const acc& divisor, maxtype precision) {
         acc result;
         result.entry.accuracy = precision;
@@ -1228,11 +1241,11 @@ private:
         std::deque<int8_t> quotientDigits;
         acc remainder = dividend;
 
-        // ÒÑ¾­´¦ÀíÁË¶àÉÙÎ»£¨°üÀ¨ÕûÊıºÍĞ¡Êı£©
+        // å·²ç»å¤„ç†äº†å¤šå°‘ä½ï¼ˆåŒ…æ‹¬æ•´æ•°å’Œå°æ•°ï¼‰
         maxtype processedDigits = 0;
         maxtype integerDigits = 0;
 
-        // Ê×ÏÈ´¦ÀíÕûÊı²¿·Ö
+        // é¦–å…ˆå¤„ç†æ•´æ•°éƒ¨åˆ†
         while (remainder >= divisor) {
             int8_t digit = 0;
             while (remainder >= divisor) {
@@ -1244,17 +1257,17 @@ private:
             integerDigits++;
         }
 
-        // Èç¹ûÃ»ÓĞÕûÊı²¿·Ö£¬Ìí¼Ó0
+        // å¦‚æœæ²¡æœ‰æ•´æ•°éƒ¨åˆ†ï¼Œæ·»åŠ 0
         if (integerDigits == 0) {
             quotientDigits.push_back(0);
             processedDigits++;
         }
 
-        // Ìí¼ÓĞ¡Êıµã
+        // æ·»åŠ å°æ•°ç‚¹
         if (precision > 0) {
-            // ¼ÌĞø´¦ÀíĞ¡Êı²¿·Ö
+            // ç»§ç»­å¤„ç†å°æ•°éƒ¨åˆ†
             for (maxtype i = 0; i < precision; i++) {
-                // "½è"Ò»Î»
+                // "å€Ÿ"ä¸€ä½
                 remainder = remainder * acc(10);
 
                 int8_t digit = 0;
@@ -1268,21 +1281,21 @@ private:
             }
         }
 
-        // ¹¹½¨½á¹û
+        // æ„å»ºç»“æœ
         result.entry.data = quotientDigits;
 
-        // ÒÆ³ıÇ°µ¼Áã£¨µ«Òª±£ÁôĞ¡ÊıµãÇ°µÄÒ»¸öÁã£©
+        // ç§»é™¤å‰å¯¼é›¶ï¼ˆä½†è¦ä¿ç•™å°æ•°ç‚¹å‰çš„ä¸€ä¸ªé›¶ï¼‰
         result.removeLeadingZeros();
 
         return result;
     }
 
-    // ÅĞ¶ÏÊÇ·ñÎª0
+    // åˆ¤æ–­æ˜¯å¦ä¸º0
     bool isZero() const {
         if (entry.data.empty()) return true;
         if (entry.data.size() == 1 && entry.data[0] == 0) return true;
 
-        // ¼ì²éËùÓĞÎ»ÊÇ·ñ¶¼ÊÇ0
+        // æ£€æŸ¥æ‰€æœ‰ä½æ˜¯å¦éƒ½æ˜¯0
         for (int8_t digit : entry.data) {
             if (digit != 0) return false;
         }
@@ -1291,11 +1304,11 @@ private:
 
 };
 
-// ÃİÔËËãº¯Êı
+// å¹‚è¿ç®—å‡½æ•°
 acc pow(const acc& base, int exponent) {
     if (exponent == 0) return 1;
     if (exponent < 0) {
-        // ¼òµ¥´¦Àí£º·µ»Ø1³ıÒÔÃİ
+        // ç®€å•å¤„ç†ï¼šè¿”å›1é™¤ä»¥å¹‚
         return 1.0 / pow((long double)base, -exponent);
     }
 
@@ -1306,35 +1319,34 @@ acc pow(const acc& base, int exponent) {
     return result;
 }
 
-
-// ²âÊÔº¯Êı
+// æµ‹è¯•å‡½æ•°
+using namespace std;
 int main() {
     acc g = .6;
     acc val(3.0), div(2.0);
-    //TODO issue:imcompable type if not long double,etc.
     std::cout << val / div << std::endl;
 
-    std::cout << "=== ²âÊÔ´óÕûÊıÖ§³Ö ===" << std::endl;
+    std::cout << "=== æµ‹è¯•å¤§æ•´æ•°æ”¯æŒ ===" << std::endl;
 
-    // ²âÊÔ´óÕûÊı
+    // æµ‹è¯•å¤§æ•´æ•°
     acc bigInt1("18446744073709551618");
-    std::cout << "bigInt1 = " << bigInt1 << " (¾«¶È: " << bigInt1.getAccuracy() << ")" << std::endl;
+    std::cout << "bigInt1 = " << bigInt1 << " (ç²¾åº¦: " << bigInt1.getAccuracy() << ")" << std::endl;
 
-    // ²âÊÔ¸³ÖµÔËËã·û
+    // æµ‹è¯•èµ‹å€¼è¿ç®—ç¬¦
     acc bigInt2;
     bigInt2 = "18446744073709551619.71";
-    std::cout << "bigInt2 = " << bigInt2 << " (¾«¶È: " << bigInt2.getAccuracy() << ")" << std::endl;
+    std::cout << "bigInt2 = " << bigInt2 << " (ç²¾åº¦: " << bigInt2.getAccuracy() << ")" << std::endl;
 
-    // ²âÊÔ¸¡µãÊı¾«¶È
-    std::cout << "\n=== ²âÊÔ¸¡µãÊı¾«¶È ===" << std::endl;
+    // æµ‹è¯•æµ®ç‚¹æ•°ç²¾åº¦
+    std::cout << "\n=== æµ‹è¯•æµ®ç‚¹æ•°ç²¾åº¦ ===" << std::endl;
     acc floatNum = 456.789L;
-    std::cout << "floatNum = 456.789 -> " << floatNum << " (¾«¶È: " << floatNum.getAccuracy() << ")" << std::endl;
+    std::cout << "floatNum = 456.789 -> " << floatNum << " (ç²¾åº¦: " << floatNum.getAccuracy() << ")" << std::endl;
 
     acc preciseFloat = 123.456789012345678L;
     std::cout << "preciseFloat = 123.456789012345678 -> " << preciseFloat << std::endl;
 
-    // ²âÊÔÔËËã
-    std::cout << "\n=== ²âÊÔÔËËã ===" << std::endl;
+    // æµ‹è¯•è¿ç®—
+    std::cout << "\n=== æµ‹è¯•è¿ç®— ===" << std::endl;
     acc a = 123;
     acc b = 456.789L;
     std::cout << "a = " << a << std::endl;
@@ -1343,22 +1355,23 @@ int main() {
     std::cout << "b - a = " << b - a << std::endl;
     std::cout << "a * b = " << a * b << std::endl;
 
-    // ²âÊÔ¸´ºÏ¸³Öµ
-    std::cout << "\n=== ²âÊÔ¸´ºÏ¸³Öµ ===" << std::endl;
+    // æµ‹è¯•å¤åˆèµ‹å€¼
+    std::cout << "\n=== æµ‹è¯•å¤åˆèµ‹å€¼ ===" << std::endl;
     acc c = 100;
+    cout << c << endl;
     c += 50;
     std::cout << "c += 50 -> " << c << std::endl;
     c *= 2;
     std::cout << "c *= 2 -> " << c << std::endl;
 
-    // ²âÊÔµİÔöµİ¼õ
-    std::cout << "\n=== ²âÊÔµİÔöµİ¼õ ===" << std::endl;
+    // æµ‹è¯•é€’å¢é€’å‡
+    std::cout << "\n=== æµ‹è¯•é€’å¢é€’å‡ ===" << std::endl;
     acc d = 10;
     std::cout << "d = " << d << std::endl;
     std::cout << "++d = " << ++d << std::endl;
     std::cout << "d++ = " << d++ << std::endl;
     std::cout << "d = " << d << std::endl;
 
-    std::cout << "\nËùÓĞ²âÊÔÍê³É£¡" << std::endl;
+    std::cout << "\næ‰€æœ‰æµ‹è¯•å®Œæˆï¼" << std::endl;
     return 0;
 }
